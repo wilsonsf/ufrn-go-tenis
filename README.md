@@ -1,10 +1,9 @@
 # Partida de Tênis
 
 ## Regras
-- 2 jogadores
-Cada jogador joga, quando a bola está na sua quadra
-
-Pode acertar ou não (aleatoreidade)
+- 2 jogadores  
+- Cada jogador joga, quando a bola está na sua quadra
+- Pode acertar ou não (aleatoreidade)
 
 >  Definir uma taxa de sucesso (70%?)  
   Random.float entre 0 e 1 (já está em percentual)  
