@@ -33,6 +33,9 @@ func main() {
 	/* Garantindo aleatoriedade das execuções */
 	rand.Seed(time.Now().UnixNano())
 
+	fmt.Print("Limite de pontos por GAME: ")
+	fmt.Scanln(&pointLimit)
+
 	player1 := Player{name: "Gabriela", skill: float32(0.65)}
 	player2 := Player{name: "Wilson", skill: float32(0.40)}
 
