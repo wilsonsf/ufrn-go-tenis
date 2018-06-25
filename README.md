@@ -43,6 +43,7 @@ Ganha o game que atingir o número de pontos P primeiro.
 3. Personalizar o número de SETs.
 
 ## Algoritmo
+```
 Começa a partida
 
 Enquanto condição de match não for verdadeira
@@ -56,7 +57,7 @@ Enquanto condição de match não for verdadeira
     Termina o game.
   Termina o set.
 Termina o match.
-
+```
 
 
 

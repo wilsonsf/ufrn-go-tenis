@@ -1,112 +1,111 @@
 package main
 
 import (
-	"sync"
 	"fmt"
+	"sync"
 	"math/rand"
 	"time"
 )
 
+/* Player define uma estrutura que encapsula os dados do jogador e sua pontuação. */
 type Player struct {
-	playerScore int8
-	skill       float32
-	name        string
-	opponent    *Player
+	playerScore int8 // Pontuação do jogador por GAME
+	//gameScore   int8	// Quantidade de GAMEs ganhos
+	//setScore	int8	// Quantidade de SETs ganhos
+	skill    float32 // Chance de acertar a bola
+	name     string
+	opponent *Player // Referência para o oponente
 }
 
+/* Aumenta a pontuação do jogador e notifica. */
 func (p *Player) score() {
 	p.playerScore++
-	fmt.Printf("%s: ganhou um ponto. (%d)\n", p.name, p.playerScore)
+	fmt.Printf("%s ganhou um ponto. (%d)\n", p.name, p.playerScore)
 }
 
+/* Utilizado para aguardar final do Game. */
 var wg sync.WaitGroup
 
+/* Utilizado para definir o limite de pontos por Game. */
+var pointLimit = int8(4)
+
 func main() {
+	/* Garantindo aleatoriedade das execuções */
 	rand.Seed(time.Now().UnixNano())
 
-	player1 := Player{name: "Jogador 1"}
-	player2 := Player{name: "Jogador 2"}
+	player1 := Player{name: "Gabriela", skill: float32(0.65)}
+	player2 := Player{name: "Wilson", skill: float32(0.40)}
 
 	makeOpponents(&player1, &player2)
 
-	//player1toPlayer2 := make(chan bool)
-	//player2toPlayer1 := make(chan bool)
-	//gameIsRunning := make(chan bool)
 	hasTheBall := make(chan bool)
 
-	//if player1.hasTheBall {
-	//	fmt.Printf("%s has the ball.\n", player1.name)
-	//	fmt.Printf("Score: %d\n", player1.playerScore)
-	//}
-	//
-	//if player2.hasTheBall {
-	//	fmt.Printf("%s has the ball.\n", player2.name)
-	//}
+	wg.Add(2)
 
 	go gameRoutine(&player1, hasTheBall)
 	go gameRoutine(&player2, hasTheBall)
 
 	hasTheBall <- true
 
-	endGame(player1, player2)
-
 	wg.Wait()
+
+	endGame(player1, player2)
 }
 
+/* Adiciona referência de um jogador para o outro, e vice-versa. */
 func makeOpponents(player1 *Player, player2 *Player) {
 	player1.opponent = player2
 	player2.opponent = player1
 }
+
+/* Encerra a o GAME anunciando o placar. */
 func endGame(player Player, player2 Player) {
-	fmt.Println("End of game!")
+	fmt.Println("\n\nEnd of game!")
 	showScore(player, player2)
 }
 
+/* Exibe a pontuação do jogadores no GAME. */
 func showScore(player Player, player2 Player) (int, error) {
 	return fmt.Printf("Score: %d-%d\n", player.playerScore, player2.playerScore)
 }
 
-func gameRoutine(player * Player, hasTheBall chan bool) {
-	for ; player.playerScore < 4; {
+/* Encapsula a rotina de um GAME em goroutine. */
+func gameRoutine(player *Player, hasTheBall chan bool) {
+	defer wg.Done()
+	for ; player.playerScore < pointLimit; {
 
-		//defer wg.Done()
+		keepPlaying, ok := <-hasTheBall
 
-		keepPlaying := <-hasTheBall
-
-		if !keepPlaying {
-			break
+		if !ok {
+			return
 		}
 
 		player.receiveBall()
 		player.play()
-		//chance := rand.Float32() * 100
-		//fmt.Printf("Chance de sucesso: %f", chance)
-		//if chance > 70 {
-		//	fmt.Printf("%s acertou a bola!\n", player.name)
-		//	//devolve a bola
-		//} else {
-		//	fmt.Printf("%s errou a bola. :(\n",player.name)
-		//	// O outro ganha ponto
-		//}
 
-		hasTheBall <- true
+		if player.playerScore < pointLimit {
+			hasTheBall <- keepPlaying
+		}
 	}
-	hasTheBall <- false
+	close(hasTheBall)
 }
 
-func (p *Player) play() {
-	fmt.Printf("%s jogando.\n\n", p.name)
+/* Anuncia quem está com a bola.  */
+func (p Player) receiveBall() {
+	fmt.Printf("\n%s está com a bola!\n", p.name)
+}
 
-	chance := rand.Float32() * 100
-	//fmt.Printf("Chance de sucesso: %.2f\n", chance)
-	if chance > 70 {
+/* Encapsula a rotina de jogo, usando valores aleatórios e trata pontuação do GAME. */
+func (p *Player) play() bool {
+	fmt.Printf("%s jogando.\n", p.name)
+
+	chance := rand.Float32()
+	if chance-p.skill > 0 {
 		fmt.Printf("%s acertou a bola!\n", p.name)
-		//devolve a bola
-	} else {
-		fmt.Printf("%s errou a bola. :(\n", p.name)
-		p.opponent.score()
+		return false
 	}
-}
-func (p *Player) receiveBall() {
-	fmt.Printf("%s recebeu a bola!\n", p.name)
+
+	fmt.Printf("%s errou a bola. :(\n", p.name)
+	p.opponent.score()
+	return true
 }
